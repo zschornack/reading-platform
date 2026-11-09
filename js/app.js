@@ -54,6 +54,7 @@ const state = {
   history: [], // one entry per completed session: words, ms, quiz result
   overlayBookId: null,
   accountMenuOpen: false,
+  ageFilter: "all",
 };
 
 function setTheme(theme) {
@@ -70,17 +71,53 @@ function bookStatus(book) {
   return "unread";
 }
 const STATUS_LABEL = { read: "Read", progress: "In progress", unread: "Not read yet" };
-function statusIcon(status) {
+function progressRing(pct, size = 26) {
+  const r = size / 2 - 3.5, C = 2 * Math.PI * r;
+  return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="ring-bg"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="ring-fg" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}"/>
+  </svg>`;
+}
+function statusIcon(book) {
+  const status = bookStatus(book);
   if (status === "read") return `<span class="status status-read" title="Read">${ICON.check(14)}</span>`;
-  if (status === "progress") return `<span class="status status-progress" title="In progress"></span>`;
-  return `<span class="status status-unread" title="Not read yet"></span>`;
+  if (status === "progress") {
+    const p = state.progress[book.id];
+    const pct = Math.max(0.04, p.counted.size / p.totalSentences);
+    return `<span class="status" title="${Math.round(pct * 100)}% read">${progressRing(pct)}</span>`;
+  }
+  return "";
 }
 
+/* Age filter */
+const AGE_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "4-6", label: "Ages 4–6", min: 4, max: 6 },
+  { id: "6-9", label: "Ages 6–9", min: 6, max: 9 },
+  { id: "9+", label: "Ages 9+", min: 9, max: 99 },
+];
+function ageBounds(book) {
+  const [a, b] = book.ageRange.match(/\d+/g).map(Number);
+  return [a, b ?? a];
+}
+function matchesAge(book) {
+  const f = AGE_FILTERS.find((x) => x.id === state.ageFilter);
+  if (!f || f.id === "all") return true;
+  const [a, b] = ageBounds(book);
+  return a <= f.max && b >= f.min;
+}
+function ageFilters() {
+  return `<div class="filters">${AGE_FILTERS.map(
+    (f) => `<button class="filter ${state.ageFilter === f.id ? "on" : ""}" data-action="filter" data-id="${f.id}">${f.label}</button>`
+  ).join("")}</div>`;
+}
+
+/* Solid-colour cover with the title, until real cover images are uploaded (book.coverImage). */
 function cover(book, cls = "") {
-  return `<div class="cover ${cls}" style="--cover:${book.coverColor}">
-    <span class="cover-emoji">${book.coverEmoji}</span>
-    <span class="cover-title">${esc(book.title)}</span>
-  </div>`;
+  const inner = book.coverImage
+    ? `<img src="${esc(book.coverImage)}" alt="">`
+    : `<span class="cover-title">${esc(book.title)}</span>`;
+  return `<div class="cover ${cls}" style="--c:${book.coverColor}">${inner}</div>`;
 }
 
 /* ==========================================================================
@@ -149,20 +186,19 @@ function accountMenu() {
 }
 
 function libraryGrid() {
-  return `<div class="grid">${BOOKS.map((b) => {
-    const st = bookStatus(b);
-    return `
-    <button class="book-card" data-action="open-book" data-id="${b.id}">
+  const list = BOOKS.filter(matchesAge);
+  const cards = list.map((b) => `
+    <button class="book-card" data-action="open-book" data-id="${b.id}" style="--c:${b.coverColor}">
       ${cover(b)}
       <div class="book-meta">
         <div>
           <div class="book-title">${esc(b.title)}</div>
-          <div class="book-age">${esc(b.ageRange)}</div>
+          <span class="book-age">${esc(b.ageRange)}</span>
         </div>
-        ${statusIcon(st)}
+        ${statusIcon(b)}
       </div>
-    </button>`;
-  }).join("")}</div>`;
+    </button>`).join("");
+  return `<div class="grid">${cards || `<div class="empty-filter">No books for this age yet.</div>`}</div>`;
 }
 
 function homePage() {
@@ -174,16 +210,19 @@ function homePage() {
   return `
   <main class="page">
     <section class="hero">
-      <p class="eyebrow">Welcome</p>
-      <h1>Hi, <span class="student-name">Student</span> 👋</h1>
-      <p class="hero-sub">Pick a story and read at your own pace.</p>
-      <div class="hero-actions">
+      <div>
+        <p class="eyebrow">Welcome</p>
+        <h1>Hi, <span class="student-name">Student</span></h1>
+        <p class="hero-sub">Pick a story and read at your own pace.</p>
         <button class="btn btn-primary btn-lg" data-action="start-reading">${startLabel}</button>
-        <span class="chip">${ICON.flame(16)} ${streak} day streak</span>
+      </div>
+      <div class="hero-stats">
+        <span class="chip">${ICON.flame(16)} <b>${streak}</b> day streak</span>
+        <span class="chip"><b>${avgWpm() ?? "—"}</b> avg WPM</span>
       </div>
     </section>
     <section>
-      <div class="section-head"><h2>Library</h2><a href="#/library" class="link">See all</a></div>
+      <div class="section-head"><h2>Library</h2>${ageFilters()}</div>
       ${libraryGrid()}
     </section>
   </main>`;
@@ -193,10 +232,16 @@ function libraryPage() {
   return `
   <main class="page">
     <div class="section-head page-title">
-      <h1>Library</h1><span class="muted">${BOOKS.length} books</span>
+      <h1>Library</h1>${ageFilters()}
     </div>
     ${libraryGrid()}
   </main>`;
+}
+
+function avgWpm() {
+  const words = state.history.reduce((a, x) => a + x.words, 0);
+  const ms = state.history.reduce((a, x) => a + x.ms, 0);
+  return wpmOf(words, ms);
 }
 
 function computeStreak() {
@@ -220,22 +265,6 @@ function statsPage() {
   const tile = (label, value, sub = "") =>
     `<div class="tile"><span class="tile-label">${label}</span><span class="tile-value">${value}</span>${sub ? `<span class="tile-sub">${sub}</span>` : ""}</div>`;
 
-  const rows = h
-    .slice()
-    .reverse()
-    .map(
-      (x) => `<tr>
-        <td>${esc(x.bookTitle)}</td>
-        <td>Ch. ${x.chapter} · ${esc(x.chapterTitle)}</td>
-        <td>${x.session}</td>
-        <td>${x.words}</td>
-        <td>${formatDuration(x.ms)}</td>
-        <td><strong>${wpmOf(x.words, x.ms) ?? "—"}</strong></td>
-        <td>${x.correct ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'}</td>
-      </tr>`
-    )
-    .join("");
-
   return `
   <main class="page">
     <div class="section-head page-title"><h1>Your stats</h1><span class="muted">This visit only</span></div>
@@ -247,14 +276,6 @@ function statsPage() {
       ${tile("Streak", computeStreak(), "days in a row")}
       ${tile("Books finished", state.finishedBooks.size)}
     </div>
-    <h2 class="sub-h">Reading history</h2>
-    ${
-      h.length
-        ? `<div class="table-wrap"><table class="table">
-            <thead><tr><th>Book</th><th>Chapter</th><th>Session</th><th>Words</th><th>Time</th><th>WPM</th><th>Quiz</th></tr></thead>
-            <tbody>${rows}</tbody></table></div>`
-        : `<div class="empty">No reading yet. Finish a session of a story and it will show up here.</div>`
-    }
   </main>`;
 }
 
@@ -266,13 +287,13 @@ function bookOverlay() {
   const label = !b.available ? "Coming soon" : st === "read" ? "READ AGAIN" : st === "progress" ? "CONTINUE" : "READ";
   return `
   <div class="overlay" data-action="close-overlay-bg">
-    <div class="book-modal" role="dialog" aria-modal="true" aria-label="${esc(b.title)}">
+    <div class="book-modal" style="--c:${b.coverColor}" role="dialog" aria-modal="true" aria-label="${esc(b.title)}">
       <button class="icon-btn modal-close" data-action="close-overlay" aria-label="Close">${ICON.close(20)}</button>
       ${cover(b, "cover-lg")}
       <div class="modal-body">
         <h2>${esc(b.title)}</h2>
         <div class="modal-tags">
-          <span class="tag">${esc(b.ageRange)}</span>
+          <span class="tag tag-age">${esc(b.ageRange)}</span>
           <span class="tag">${STATUS_LABEL[st]}</span>
           ${b.chapters ? `<span class="tag">${b.chapters.length} chapters</span><span class="tag">${b.words} words · ~${minutes} min</span>` : ""}
         </div>
@@ -332,6 +353,10 @@ document.addEventListener("click", (e) => {
       state.accountMenuOpen = false;
       renderPage();
       toast("Coming soon — accounts arrive after the pilot.");
+      break;
+    case "filter":
+      state.ageFilter = el.dataset.id;
+      renderPage();
       break;
     case "open-book":
       state.overlayBookId = el.dataset.id;
@@ -611,7 +636,7 @@ const Reader = {
     if (s.type === "intro") {
       const ch = this.chapter(s.ci);
       html = `<div class="center-view intro">
-        <div class="intro-icon">${ch.icon}</div>
+        ${cover(this.book, "cover-intro")}
         <p class="intro-num">${s.ci + 1}. Chapter</p>
         <h1 class="intro-title">${esc(ch.title)}</h1>
       </div>`;
@@ -630,11 +655,11 @@ const Reader = {
       const words = accs.reduce((a, x) => a + x.words, 0);
       const ms = accs.reduce((a, x) => a + x.ms, 0);
       const right = ch.sessions.filter((se) => this.p.quiz[se.id]?.correct).length;
-      html = this.summary(ch.icon, `Chapter ${s.ci + 1} complete!`, ch.title, words, ms, `${right}/${ch.sessions.length}`);
+      html = this.summary(cover(this.book, "cover-intro pop"), `Chapter ${s.ci + 1} complete!`, ch.title, words, ms, `${right}/${ch.sessions.length}`);
     } else if (s.type === "bookEnd") {
       const sessions = this.book.chapters.flatMap((c) => c.sessions);
       const right = sessions.filter((se) => this.p.quiz[se.id]?.correct).length;
-      html = this.summary("🏆", `You finished ${esc(this.book.title)}!`, "Great job, Student!", this.p.totals.words, this.p.totals.ms, `${right}/${sessions.length}`);
+      html = this.summary(`<div class="done-badge pop">${ICON.check(44)}</div>`, `You finished ${esc(this.book.title)}!`, "Great job, Student!", this.p.totals.words, this.p.totals.ms, `${right}/${sessions.length}`);
     }
     this.$stage.innerHTML = html;
     this.$track = null;
@@ -642,7 +667,7 @@ const Reader = {
 
   summary(icon, title, sub, words, ms, quiz) {
     return `<div class="center-view summary">
-      <div class="intro-icon pop">${icon}</div>
+      ${icon}
       <h1 class="summary-title">${title}</h1>
       <p class="muted">${esc(sub)}</p>
       <div class="summary-tiles">
@@ -745,7 +770,7 @@ const Reader = {
             const unlocked = introIdx <= this.p.maxPos;
             const done = endIdx <= this.p.maxPos;
             return `<button class="chapter-row ${i === ci ? "current" : ""}" data-r="chapter" data-ci="${i}" ${unlocked ? "" : "disabled"}>
-              <span class="ch-icon">${ch.icon}</span>
+              <span class="ch-icon">${i + 1}</span>
               <span class="ch-text"><small>Chapter ${i + 1}</small>${esc(ch.title)}</span>
               <span class="ch-state">${done ? ICON.check(16) : unlocked ? "" : ICON.lock(16)}</span>
             </button>`;

@@ -13,14 +13,12 @@ const BOOKS = [
     title: "Snow White",
     ageRange: "Ages 6–8",
     coverColor: "#BFE3EE",
-    coverEmoji: "🍎",
     available: true,
     synopsis:
       "A kind princess, a jealous queen and a magic mirror that never lies. When Snow White runs into the forest to escape the queen, she finds a tiny house, seven new friends — and a very dangerous apple.",
     chapters: [
       {
         title: "The Beautiful Queen",
-        icon: "👑",
         sessions: [
           {
             sentences: [
@@ -62,7 +60,6 @@ const BOOKS = [
       },
       {
         title: "Into the Forest",
-        icon: "🌲",
         sessions: [
           {
             sentences: [
@@ -108,7 +105,6 @@ const BOOKS = [
       },
       {
         title: "Seven New Friends",
-        icon: "⛏️",
         sessions: [
           {
             sentences: [
@@ -148,7 +144,6 @@ const BOOKS = [
       },
       {
         title: "Happily Ever After",
-        icon: "✨",
         sessions: [
           {
             sentences: [
@@ -180,23 +175,23 @@ const BOOKS = [
   },
 
   /* ---- Visual-only books (no content in the pilot) ---- */
-  { id: "lighthouse-cat", title: "The Lighthouse Cat", ageRange: "Ages 6–8", coverColor: "#F6C9C1", coverEmoji: "🐈", available: false,
+  { id: "lighthouse-cat", title: "The Lighthouse Cat", ageRange: "Ages 6–8", coverColor: "#F6C9C1", available: false,
     synopsis: "Every night, a small orange cat climbs the lighthouse stairs to make sure the light stays on. But one stormy night, the light goes out." },
-  { id: "moon-balloon", title: "Max and the Moon Balloon", ageRange: "Ages 5–7", coverColor: "#C9DDF6", coverEmoji: "🎈", available: false,
+  { id: "moon-balloon", title: "Max and the Moon Balloon", ageRange: "Ages 5–7", coverColor: "#C9DDF6", available: false,
     synopsis: "Max finds a silver balloon that pulls him higher and higher — all the way to the moon." },
-  { id: "garden-gate", title: "The Secret Garden Gate", ageRange: "Ages 9–11", coverColor: "#CDEBC5", coverEmoji: "🗝️", available: false,
+  { id: "garden-gate", title: "The Secret Garden Gate", ageRange: "Ages 9–11", coverColor: "#CDEBC5", available: false,
     synopsis: "Behind an old wall covered in ivy, Lily discovers a garden nobody has visited for fifty years." },
-  { id: "pip-penguin", title: "Pip the Brave Penguin", ageRange: "Ages 5–7", coverColor: "#E3D7F5", coverEmoji: "🐧", available: false,
+  { id: "pip-penguin", title: "Pip the Brave Penguin", ageRange: "Ages 5–7", coverColor: "#E3D7F5", available: false,
     synopsis: "Pip is the smallest penguin on the ice, but when the colony gets lost, he is the one who finds the way home." },
-  { id: "rainy-detectives", title: "Rainy Day Detectives", ageRange: "Ages 8–10", coverColor: "#FBE3B5", coverEmoji: "🔍", available: false,
+  { id: "rainy-detectives", title: "Rainy Day Detectives", ageRange: "Ages 8–10", coverColor: "#FBE3B5", available: false,
     synopsis: "Stuck inside on a rainy Saturday, three cousins try to solve the mystery of grandma's missing cookie jar." },
-  { id: "clockmaker", title: "The Clockmaker's Apprentice", ageRange: "Ages 10–12", coverColor: "#F5D0E3", coverEmoji: "🕰️", available: false,
+  { id: "clockmaker", title: "The Clockmaker's Apprentice", ageRange: "Ages 10–12", coverColor: "#F5D0E3", available: false,
     synopsis: "Theo works in a strange shop where every clock shows a different time — and one of them shows the future." },
-  { id: "fox-juniper", title: "A Fox Named Juniper", ageRange: "Ages 7–9", coverColor: "#D2EFEA", coverEmoji: "🦊", available: false,
+  { id: "fox-juniper", title: "A Fox Named Juniper", ageRange: "Ages 7–9", coverColor: "#D2EFEA", available: false,
     synopsis: "A curious young fox leaves the forest for the first time and learns that the city is full of surprises." },
-  { id: "paper-town", title: "Tales from Paper Town", ageRange: "Ages 6–8", coverColor: "#EADCC8", coverEmoji: "📜", available: false,
+  { id: "paper-town", title: "Tales from Paper Town", ageRange: "Ages 6–8", coverColor: "#EADCC8", available: false,
     synopsis: "In a town made entirely of paper, everyone is afraid of one thing: rain." },
-  { id: "dragon-egg", title: "The Last Dragon Egg", ageRange: "Ages 9–12", coverColor: "#C8D3F2", coverEmoji: "🥚", available: false,
+  { id: "dragon-egg", title: "The Last Dragon Egg", ageRange: "Ages 9–12", coverColor: "#C8D3F2", available: false,
     synopsis: "When a farm girl finds a warm, glowing stone in the hay, she has no idea it is about to hatch." },
 ];
 
