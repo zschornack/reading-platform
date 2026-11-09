@@ -5,16 +5,7 @@ Protótipo funcional da plataforma de leitura em inglês. Sem login e sem banco 
 
 ## Como rodar
 
-Não precisa instalar nada. Abra o `index.html` no navegador (duplo clique).
-
-## Estrutura
-
-```
-index.html        página única
-css/styles.css    estilos (dark mode padrão + light mode)
-js/data.js        livros, capítulos, sessões, frases e quizzes + contagem de palavras
-js/app.js         telas (home, biblioteca, stats) e o leitor
-```
+Abra o `index.html` no navegador.
 
 ## O que está funcionando
 
